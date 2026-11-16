@@ -1,0 +1,4 @@
+/* Register-specific presentation. Only the Register screen loads this file. */
+
+#password-match-hint.ok { color: #2DD8C4; }
+#password-match-hint.mismatch { color: #F1685A; }

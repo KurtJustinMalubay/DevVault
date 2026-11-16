@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Home — DevVault{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/home/home.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-7xl px-6 py-10">
+
+  {% if not workspace %}
+  <div class="glass-panel mx-auto max-w-lg px-8 py-12 text-center">
+    <h1 class="font-display text-xl text-ink">No workspace yet</h1>
+    <p class="mt-2 text-sm leading-relaxed text-mute">
+      Your account isn't attached to a vault. Workspaces are created automatically
+      when you register — if you're seeing this, you can create one or ask a teammate
+      to invite you to theirs.
+    </p>
+    <a href="{% url 'home:workspace-create' %}" class="mt-5 inline-flex bg-brass px-4 py-2.5 text-sm font-semibold text-vault-950 hover:bg-brass-soft">Create a vault</a>
+  </div>
+
+  {% else %}
+
+  <div class="flex flex-wrap items-end justify-between gap-4">
+    <div>
+      <p class="font-mono text-xs text-mute">workspace</p>
+      <h1 class="mt-1 font-display text-3xl font-semibold text-ink">{{ workspace.name }}</h1>
+    </div>
+    <div class="flex items-center gap-3">
+      <p class="text-sm text-mute">{{ member_count }} member{{ member_count|pluralize }} &middot; {{ total_entries }} total entr{{ total_entries|pluralize:"y,ies" }}</p>
+      <a href="{% url 'home:entry-create' %}" class="border border-brass/50 px-3 py-1.5 text-xs text-brass hover:bg-brass/10 transition">New entry</a>
+    </div>
+  </div>
+
+  <div id="quick-stats" class="glass-panel mt-8 grid grid-cols-2 divide-x divide-y divide-white/5 sm:grid-cols-4 sm:divide-y-0">
+    <div class="relative px-6 py-5">
+      <span class="corner-tick top-2 left-2 border-t border-l"></span>
+      <span class="corner-tick bottom-2 right-2 border-b border-r"></span>
+      <p class="text-xs text-mute">Total assets</p>
+      <p class="mt-2 font-display text-3xl font-semibold text-teal">{{ total_assets }}</p>
+    </div>
+    <div class="relative px-6 py-5">
+      <span class="corner-tick top-2 left-2 border-t border-l"></span>
+      <span class="corner-tick bottom-2 right-2 border-b border-r"></span>
+      <p class="text-xs text-mute">Open issues</p>
+      <p class="mt-2 font-display text-3xl font-semibold text-coral">{{ open_issue_count }}</p>
+    </div>
+    <div class="relative px-6 py-5">
+      <span class="corner-tick top-2 left-2 border-t border-l"></span>
+      <span class="corner-tick bottom-2 right-2 border-b border-r"></span>
+      <p class="text-xs text-mute">Total entries</p>
+      <p class="mt-2 font-display text-3xl font-semibold text-ink">{{ total_entries }}</p>
+    </div>
+    <div class="relative px-6 py-5">
+      <span class="corner-tick top-2 left-2 border-t border-l"></span>
+      <span class="corner-tick bottom-2 right-2 border-b border-r"></span>
+      <p class="text-xs text-mute">Team members</p>
+      <p class="mt-2 font-display text-3xl font-semibold text-brass">{{ member_count }} <span class="text-base text-mute">/ 5</span></p>
+    </div>
+  </div>
+
+  <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+    <div class="glass-panel lg:col-span-2">
+      <div class="border-b border-white/5 px-6 py-4">
+        <div class="flex items-center justify-between gap-4">
+          <h2 class="font-display text-lg font-semibold text-ink">Recent entries</h2>
+          <a href="{% url 'home:entries' %}" class="text-xs text-brass hover:text-brass-soft">View all</a>
+        </div>
+      </div>
+
+      {% if recent_entries %}
+      <ul class="divide-y divide-white/5">
+        {% for entry in recent_entries %}
+        <li class="flex gap-4 px-6 py-4
+          {% if entry.entry_type == 'ASSET' %}border-l-2 border-teal
+          {% elif entry.entry_type == 'BUG' %}border-l-2 border-coral
+          {% elif entry.entry_type == 'DECISION' %}border-l-2 border-brass
+          {% else %}border-l-2 border-white/15{% endif %}">
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="font-mono text-[11px] px-2 py-0.5 border
+                {% if entry.entry_type == 'ASSET' %}border-teal/40 text-teal
+                {% elif entry.entry_type == 'BUG' %}border-coral/40 text-coral
+                {% elif entry.entry_type == 'DECISION' %}border-brass/40 text-brass
+                {% else %}border-white/20 text-mute{% endif %}">
+                {{ entry.get_entry_type_display }}
+              </span>
+              {% if entry.entry_type == 'BUG' %}
+              <span class="text-[11px] text-mute">{{ entry.get_status_display }}</span>
+              {% endif %}
+              <a href="{{ entry.get_absolute_url }}" class="truncate text-sm font-medium text-ink hover:text-brass">{{ entry.title }}</a>
+            </div>
+            {% if entry.description %}
+            <p class="mt-1 truncate text-sm text-mute">{{ entry.description|truncatechars:90 }}</p>
+            {% endif %}
+          </div>
+          <div class="shrink-0 text-right">
+            <p class="text-xs text-mute">{{ entry.author.profile.display_name|default:entry.author.username }}</p>
+            {% if user_settings.show_timestamps %}<p class="mt-0.5 text-xs text-mute/70">{{ entry.created_at|timesince }} ago</p>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="px-6 py-10 text-center">
+        <p class="font-display text-base font-semibold text-ink">Your vault is ready for its first entry</p>
+        <p class="mt-2 text-sm text-mute">Capture an asset, bug, note, or decision to give the team a shared starting point.</p>
+        <a href="{% url 'home:entry-create' %}" class="mt-4 inline-flex border border-brass/50 px-4 py-2 text-sm text-brass hover:bg-brass/10">Create an entry</a>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="glass-panel border-coral/20">
+      <div class="border-b border-coral/10 px-6 py-4">
+        <h2 class="font-display text-lg font-semibold text-ink">Open bugs</h2>
+      </div>
+
+      {% if open_bugs %}
+      <ul class="divide-y divide-white/5">
+        {% for bug in open_bugs %}
+        <li class="px-6 py-4">
+          <a href="{{ bug.get_absolute_url }}" class="text-sm font-medium text-ink hover:text-brass">{{ bug.title }}</a>
+          <div class="mt-1.5 flex items-center gap-2">
+            <span class="font-mono text-[11px] text-coral">{{ bug.get_status_display }}</span>
+            {% if user_settings.show_timestamps %}<span class="text-[11px] text-mute/70">&middot; {{ bug.created_at|timesince }} ago</span>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="px-6 py-10 text-center">
+        <p class="text-sm text-teal">No open bugs. Nice.</p>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

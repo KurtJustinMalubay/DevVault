@@ -1,0 +1,8 @@
+/* Profile-specific presentation. Only the Profile screen loads this file. */
+
+#profile-form input[type="color"] {
+  height: 2.6rem;
+  width: 4.5rem;
+  padding: 0.25rem;
+  cursor: pointer;
+}

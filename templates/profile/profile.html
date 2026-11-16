@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Profile — DevVault{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/profile/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl px-6 py-10">
+  <h1 class="font-display text-3xl font-semibold text-ink">Profile</h1>
+  <p class="mt-1.5 text-sm text-mute">How you show up to the rest of your team.</p>
+
+  <div class="glass-panel mt-8 px-8 py-8">
+    <div class="mb-6 flex items-center gap-4">
+      <div id="avatar-preview"
+           class="grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-brass/40 font-mono text-lg font-semibold text-brass"
+           style="background-color: {{ form.instance.avatar_color|default:'#E3A537' }}22;">
+        {% if form.instance.avatar_image %}
+          <img src="{{ form.instance.avatar_image.url }}" alt="" class="h-full w-full object-cover">
+        {% else %}
+          {{ form.instance.initials|default:"?" }}
+        {% endif %}
+      </div>
+      <div>
+        <p class="text-sm text-ink">{{ form.instance.display_name|default:user.username }}</p>
+        <p class="text-xs text-mute">@{{ user.username }} &middot; {{ user.email }}</p>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5" id="profile-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="border-l-2 border-coral bg-coral/5 px-4 py-3 text-sm text-coral" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+
+      <div>
+        <label for="{{ form.display_name.id_for_label }}" class="mb-1.5 block text-sm text-ink">Display name</label>
+        {{ form.display_name }}
+        {% for error in form.display_name.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div>
+        <label for="{{ form.bio.id_for_label }}" class="mb-1.5 block text-sm text-ink">Bio</label>
+        {{ form.bio }}
+        {% for error in form.bio.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div>
+          <label for="{{ form.avatar_color.id_for_label }}" class="mb-1.5 block text-sm text-ink">Badge color</label>
+          {{ form.avatar_color }}
+          {% for error in form.avatar_color.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}
+        </div>
+        <div class="flex-1">
+          <label for="{{ form.avatar_image.id_for_label }}" class="mb-1.5 block text-sm text-ink">Profile picture</label>
+          {{ form.avatar_image }}
+          {% for error in form.avatar_image.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}
+        </div>
+      </div>
+
+      <button type="submit"
+              class="mt-2 w-full bg-brass py-2.5 text-sm font-semibold text-vault-950 transition hover:bg-brass-soft">
+        Save profile
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

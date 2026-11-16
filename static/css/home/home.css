@@ -1,0 +1,19 @@
+#quick-stats > div {
+  transition: background-color 0.2s ease;
+}
+
+#quick-stats > div:hover {
+  background: var(--surface-raised);
+}
+
+main .glass-panel ul > li {
+  transition: background-color 0.16s ease;
+}
+
+main .glass-panel ul > li:hover {
+  background: color-mix(in srgb, var(--surface-raised) 64%, transparent);
+}
+
+@media (max-width: 640px) {
+  #quick-stats > div { padding-left: 1rem; padding-right: 1rem; }
+}

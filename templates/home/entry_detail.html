@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ entry.title }} — DevVault{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-4xl px-6 py-10">
+  <a href="{% url 'home:entries' %}" class="text-sm text-mute hover:text-brass">&larr; All entries</a>
+  <div class="mt-5 flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <div class="flex flex-wrap items-center gap-2 text-xs text-mute"><span>{{ entry.get_entry_type_display }}</span><span>&middot;</span><span>{{ entry.get_status_display }}</span></div>
+      <h1 class="mt-2 font-display text-3xl font-semibold text-ink">{{ entry.title }}</h1>
+      <p class="mt-2 text-sm text-mute">By {{ entry.author.profile.display_name|default:entry.author.username }}{% if user_settings.show_timestamps %} &middot; {{ entry.created_at|date:"M j, Y g:i A" }}{% endif %}</p>
+    </div>
+    <div class="flex gap-2"><a href="{% url 'home:entry-edit' entry.pk %}" class="border border-white/15 px-3 py-2 text-sm text-mute hover:border-brass/50 hover:text-brass">Edit</a><a href="{% url 'home:entry-delete' entry.pk %}" class="border border-coral/40 px-3 py-2 text-sm text-coral hover:bg-coral/10">Delete</a></div>
+  </div>
+
+  <article class="glass-panel mt-8 px-6 py-7">
+    {% if entry.image %}<img src="{{ entry.image.url }}" alt="{{ entry.title }}" class="mb-6 max-h-96 w-full object-contain">{% endif %}
+    <div class="whitespace-pre-wrap text-sm leading-7 text-ink">{{ entry.description|default:"No description provided." }}</div>
+    {% if entry.tags.all %}<div class="mt-6 flex flex-wrap gap-2">{% for tag in entry.tags.all %}<span class="border border-white/10 px-2 py-1 text-xs text-mute">#{{ tag.name }}</span>{% endfor %}</div>{% endif %}
+  </article>
+
+  <section class="mt-8 glass-panel px-6 py-7">
+    <h2 class="font-display text-xl font-semibold text-ink">Comments</h2>
+    <div class="mt-5 space-y-5">
+      {% for comment in entry.comments.all %}<div class="border-l border-brass/40 pl-4"><p class="text-sm text-ink">{{ comment.body }}</p><p class="mt-1 text-xs text-mute">{{ comment.author.profile.display_name|default:comment.author.username }}{% if user_settings.show_timestamps %} &middot; {{ comment.created_at|timesince }} ago{% endif %}</p></div>{% empty %}<p class="text-sm text-mute">No comments yet.</p>{% endfor %}
+    </div>
+    <form method="post" class="mt-7 border-t border-white/5 pt-5">{% csrf_token %}{% if comment_form.non_field_errors %}<div class="mb-3 text-sm text-coral" role="alert">{% for error in comment_form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}<label for="{{ comment_form.body.id_for_label }}" class="mb-1.5 block text-sm text-ink">Add a comment</label>{{ comment_form.body }}{% for error in comment_form.body.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}<button class="mt-3 bg-brass px-4 py-2.5 text-sm font-semibold text-vault-950 hover:bg-brass-soft">Comment</button></form>
+  </section>
+</div>
+{% endblock %}

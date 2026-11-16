@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Settings — DevVault{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'css/user_settings/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-2xl px-6 py-10">
+  <h1 class="font-display text-3xl font-semibold text-ink">Settings</h1>
+  <p class="mt-1.5 text-sm text-mute">Preferences for how DevVault behaves for you.</p>
+
+  <div class="glass-panel mt-8 px-8 py-8">
+    <form method="post" class="space-y-6" id="settings-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="border-l-2 border-coral bg-coral/5 px-4 py-3 text-sm text-coral" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+
+      <label class="flex items-center justify-between gap-4">
+        <span>
+          <span class="block text-sm text-ink">Dark mode</span>
+          <span class="block text-xs text-mute">DevVault's interface theme.</span>
+        </span>
+        {{ form.dark_mode }}
+      </label>
+
+      <label class="flex items-center justify-between gap-4">
+        <span>
+          <span class="block text-sm text-ink">Email notifications</span>
+          <span class="block text-xs text-mute">Get emailed about activity in your workspace.</span>
+        </span>
+        {{ form.email_notifications }}
+      </label>
+
+      <label class="flex items-center justify-between gap-4">
+        <span>
+          <span class="block text-sm text-ink">Compact Home layout</span>
+          <span class="block text-xs text-mute">Denser spacing on the Home screen.</span>
+        </span>
+        {{ form.compact_dashboard }}
+      </label>
+
+      <label class="flex items-center justify-between gap-4">
+        <span>
+          <span class="block text-sm text-ink">Reduce motion</span>
+          <span class="block text-xs text-mute">Turn off decorative transitions and animations.</span>
+        </span>
+        {{ form.reduced_motion }}
+      </label>
+
+      <label class="flex items-center justify-between gap-4">
+        <span>
+          <span class="block text-sm text-ink">Show timestamps</span>
+          <span class="block text-xs text-mute">Display relative activity times across the app.</span>
+        </span>
+        {{ form.show_timestamps }}
+      </label>
+
+      <button type="submit"
+              class="mt-2 w-full bg-brass py-2.5 text-sm font-semibold text-vault-950 transition hover:bg-brass-soft">
+        Save settings
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script src="{% static 'js/user_settings/settings.js' %}"></script>
+{% endblock %}
