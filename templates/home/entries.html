@@ -22,6 +22,11 @@
       <option value="">All statuses</option>
       {% for value, label in statuses %}<option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
     </select>
+    <label class="flex items-center gap-2 text-sm text-mute">
+      <input type="checkbox" name="commented" value="1" {% if selected_commented == '1' %}checked{% endif %}
+             class="rounded border border-white/10 bg-vault-950/60 text-brass focus:ring-2 focus:ring-brass/60">
+      Has comments
+    </label>
     <button class="border border-brass/50 px-4 py-2 text-sm text-brass hover:bg-brass/10 transition">Filter</button>
   </form>
 
@@ -38,10 +43,23 @@
             </div>
             <a href="{{ entry.get_absolute_url }}" class="mt-1 block text-base font-medium text-ink hover:text-brass">{{ entry.title }}</a>
             {% if entry.description %}<p class="mt-1 text-sm text-mute">{{ entry.description|truncatechars:180 }}</p>{% endif %}
+            <div class="mt-3 flex items-center gap-3" aria-label="{{ entry.progress_percent }} percent progress">
+              <div class="h-1.5 max-w-40 flex-1 overflow-hidden rounded-full bg-vault-950/70"
+                   role="progressbar"
+                   aria-label="Entry progress"
+                   aria-valuemin="0"
+                   aria-valuemax="100"
+                   aria-valuenow="{{ entry.progress_percent }}">
+                <div class="h-full rounded-full {% if entry.status == 'RESOLVED' %}bg-teal{% elif entry.status == 'IN_PROGRESS' %}bg-brass{% else %}bg-mute/40{% endif %}"
+                     style="width: {{ entry.progress_percent }}%"></div>
+              </div>
+              <span class="font-mono text-[10px] text-mute">{{ entry.progress_percent }}%</span>
+            </div>
             {% if entry.tags.all %}<div class="mt-3 flex flex-wrap gap-2">{% for tag in entry.tags.all %}<span class="border border-white/10 px-2 py-0.5 text-[11px] text-mute">#{{ tag.name }}</span>{% endfor %}</div>{% endif %}
           </div>
           <div class="shrink-0 text-right text-xs text-mute">
             <p>{{ entry.author.profile.display_name|default:entry.author.username }}</p>
+            <p>{{ entry.workspace.name }}</p>
             {% if user_settings.show_timestamps %}<p class="mt-1 text-mute/70">{{ entry.updated_at|timesince }} ago</p>{% endif %}
           </div>
         </div>
@@ -59,9 +77,9 @@
 
   {% if is_paginated %}
   <div class="mt-5 flex justify-center gap-4 text-sm">
-    {% if page_obj.has_previous %}<a href="?q={{ query|urlencode }}&amp;type={{ selected_type|urlencode }}&amp;status={{ selected_status|urlencode }}&amp;page={{ page_obj.previous_page_number }}" class="text-brass hover:text-brass-soft">Previous</a>{% endif %}
+    {% if page_obj.has_previous %}<a href="?q={{ query|urlencode }}&amp;type={{ selected_type|urlencode }}&amp;status={{ selected_status|urlencode }}{% if selected_commented %}&amp;commented={{ selected_commented }}{% endif %}&amp;page={{ page_obj.previous_page_number }}" class="text-brass hover:text-brass-soft">Previous</a>{% endif %}
     <span class="text-mute">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}<a href="?q={{ query|urlencode }}&amp;type={{ selected_type|urlencode }}&amp;status={{ selected_status|urlencode }}&amp;page={{ page_obj.next_page_number }}" class="text-brass hover:text-brass-soft">Next</a>{% endif %}
+    {% if page_obj.has_next %}<a href="?q={{ query|urlencode }}&amp;type={{ selected_type|urlencode }}&amp;status={{ selected_status|urlencode }}{% if selected_commented %}&amp;commented={{ selected_commented }}{% endif %}&amp;page={{ page_obj.next_page_number }}" class="text-brass hover:text-brass-soft">Next</a>{% endif %}
   </div>
   {% endif %}
 </div>

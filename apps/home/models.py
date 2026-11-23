@@ -105,6 +105,14 @@ class Entry(models.Model):
         return reverse('home:entry-detail', kwargs={'pk': self.pk})
 
     @property
+    def progress_percent(self):
+        if self.status == self.Status.RESOLVED:
+            return 100
+        if self.status == self.Status.IN_PROGRESS:
+            return 50
+        return 0
+
+    @property
     def is_open_bug(self):
         return self.entry_type == self.EntryType.BUG and self.status != self.Status.RESOLVED
 
