@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}SQL Insights — DevVault{% endblock %}
+{% block breadcrumb %}SQL Insights{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="page-header"><div><p class="page-kicker">{{ workspace.name }}</p><h1 class="page-title">SQL Insights</h1><p class="page-description">Live Django ORM queries executed against Supabase PostgreSQL.</p></div></div>
+  {% if not workspace %}
+  <div class="empty-state"><div>Create or join a vault to view database insights.</div></div>
+  {% else %}
+  <section class="insights-section">
+    <div class="insights-header"><h2>JOIN · Entries with authors</h2><span class="row-count">{{ join_entries|length }} rows</span></div>
+    <div class="insights-grid">
+      <div class="sql-console"><div class="console-toolbar"><span>Generated ORM SQL</span><button type="button" class="copy-sql" data-copy-target="join-sql">Copy SQL</button></div><pre><code id="join-sql">{{ join_sql }}</code></pre></div>
+      <div class="query-grid"><table><thead><tr><th>Entry</th><th>Author</th><th>Type</th><th>Status</th></tr></thead><tbody>{% for entry in join_entries %}<tr><td>{{ entry.title }}</td><td>{{ entry.author.profile.display_name|default:entry.author.username }}</td><td>{{ entry.get_entry_type_display }}</td><td>{{ entry.get_status_display }}</td></tr>{% empty %}<tr><td colspan="4" class="timestamp">No entries in this vault</td></tr>{% endfor %}</tbody></table></div>
+    </div>
+  </section>
+
+  <section class="insights-section">
+    <div class="insights-header"><h2>SUBQUERY · Entries with comments</h2><span class="row-count">{{ subquery_entries|length }} rows</span></div>
+    <div class="insights-grid">
+      <div class="sql-console"><div class="console-toolbar"><span>Generated ORM SQL</span><button type="button" class="copy-sql" data-copy-target="subquery-sql">Copy SQL</button></div><pre><code id="subquery-sql">{{ subquery_sql }}</code></pre></div>
+      <div class="query-grid"><table><thead><tr><th>Entry</th><th>Author</th><th>Status</th></tr></thead><tbody>{% for entry in subquery_entries %}<tr><td>{{ entry.title }}</td><td>{{ entry.author.profile.display_name|default:entry.author.username }}</td><td>{{ entry.get_status_display }}</td></tr>{% empty %}<tr><td colspan="3" class="timestamp">No entries with comments</td></tr>{% endfor %}</tbody></table></div>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_body %}
+<script>
+document.querySelectorAll('[data-copy-target]').forEach(function(button) {
+  button.addEventListener('click', function() {
+    var text = document.getElementById(button.dataset.copyTarget).textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      button.textContent = 'Copied';
+      setTimeout(function(){ button.textContent = 'Copy SQL'; }, 1400);
+    });
+  });
+});
+</script>
+{% endblock %}
