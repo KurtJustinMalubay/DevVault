@@ -2,7 +2,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Count, Q, Subquery
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -10,17 +10,12 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, T
 
 from .forms import CommentForm, EntryForm, WorkspaceForm, WorkspaceInviteForm
 from .models import Comment, Entry, Membership, Workspace
+from .workspaces import get_active_workspace
 
 
 class WorkspaceAccessMixin(LoginRequiredMixin):
     def get_workspace(self):
-        workspace_id = self.request.session.get('active_workspace_id')
-        workspace = Workspace.objects.filter(members=self.request.user, pk=workspace_id).first()
-        if workspace is None:
-            workspace = Workspace.objects.filter(members=self.request.user).first()
-            if workspace is not None:
-                self.request.session['active_workspace_id'] = workspace.pk
-        return workspace
+        return get_active_workspace(self.request)
 
     def get_entry(self):
         return get_object_or_404(
@@ -34,13 +29,7 @@ class HomeView(LoginRequiredMixin, TemplateView):
     template_name = 'home/home.html'
 
     def _active_workspace(self):
-        workspace_id = self.request.session.get('active_workspace_id')
-        workspace = Workspace.objects.filter(members=self.request.user, pk=workspace_id).first()
-        if workspace is None:
-            workspace = Workspace.objects.filter(members=self.request.user).first()
-            if workspace is not None:
-                self.request.session['active_workspace_id'] = workspace.pk
-        return workspace
+        return get_active_workspace(self.request)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -60,19 +49,40 @@ class HomeView(LoginRequiredMixin, TemplateView):
             })
             return context
 
-        entries = Entry.objects.filter(workspace=workspace).select_related('author')
+        entries = Entry.objects.filter(workspace=workspace).select_related(
+            'author',
+            'author__profile',
+            'workspace',
+        )
 
         context['recent_entries'] = entries[:6]
         context['open_bugs'] = entries.filter(
             entry_type=Entry.EntryType.BUG,
         ).exclude(status=Entry.Status.RESOLVED)[:5]
 
-        context['total_assets'] = entries.filter(entry_type=Entry.EntryType.ASSET).count()
-        context['open_issue_count'] = entries.filter(entry_type=Entry.EntryType.BUG).exclude(
-            status=Entry.Status.RESOLVED
-        ).count()
-        context['total_entries'] = entries.count()
-        context['member_count'] = workspace.member_count
+        stats = entries.aggregate(
+            total_assets=Count('pk', filter=Q(entry_type=Entry.EntryType.ASSET)),
+            open_issue_count=Count(
+                'pk',
+                filter=Q(entry_type=Entry.EntryType.BUG) & ~Q(status=Entry.Status.RESOLVED),
+            ),
+            total_entries=Count('pk'),
+            in_progress_count=Count(
+                'pk',
+                filter=Q(status=Entry.Status.IN_PROGRESS),
+            ),
+            resolved_count=Count(
+                'pk',
+                filter=Q(status=Entry.Status.RESOLVED),
+            ),
+        )
+        context.update(stats)
+        context['progress_percent'] = (
+            round((context['resolved_count'] / context['total_entries']) * 100)
+            if context['total_entries']
+            else 0
+        )
+        context['member_count'] = Membership.objects.filter(workspace=workspace).count()
 
         return context
 
@@ -112,8 +122,7 @@ class WorkspaceCreateView(LoginRequiredMixin, CreateView):
 
 @login_required
 def workspace_invite_view(request):
-    workspace_id = request.session.get('active_workspace_id')
-    workspace = Workspace.objects.filter(pk=workspace_id, members=request.user).first()
+    workspace = get_active_workspace(request)
     if workspace is None:
         messages.error(request, 'Choose or create a vault before inviting members.')
         return redirect('home:home')
@@ -155,18 +164,38 @@ class EntryListView(WorkspaceAccessMixin, ListView):
     paginate_by = 12
 
     def get_queryset(self):
+        workspace = self.get_workspace()
+        if workspace is None:
+            return Entry.objects.none()
+
         queryset = Entry.objects.filter(
-            workspace=self.get_workspace(),
-        ).select_related('author').prefetch_related('tags')
+            workspace=workspace,
+        ).select_related(
+            'author',
+            'author__profile',
+            'workspace',
+        ).prefetch_related('tags')
+
         query = self.request.GET.get('q', '').strip()
         entry_type = self.request.GET.get('type', '').strip()
         status = self.request.GET.get('status', '').strip()
+        commented = self.request.GET.get('commented', '').strip()
         if query:
             queryset = queryset.filter(Q(title__icontains=query) | Q(description__icontains=query))
         if entry_type in Entry.EntryType.values:
             queryset = queryset.filter(entry_type=entry_type)
         if status in Entry.Status.values:
             queryset = queryset.filter(status=status)
+        print("\n=== DJANGO ORM JOIN SQL ===")
+        print(queryset.query)
+
+        if commented == '1':
+            commented_entry_ids = Comment.objects.filter(
+                entry__workspace=workspace,
+            ).values('entry_id')
+            queryset = queryset.filter(id__in=Subquery(commented_entry_ids))
+            print("\n=== DJANGO ORM SUBQUERY SQL ===")
+            print(queryset.query)
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -175,6 +204,7 @@ class EntryListView(WorkspaceAccessMixin, ListView):
         context['query'] = self.request.GET.get('q', '').strip()
         context['selected_type'] = self.request.GET.get('type', '')
         context['selected_status'] = self.request.GET.get('status', '')
+        context['selected_commented'] = self.request.GET.get('commented', '').strip()
         context['entry_types'] = Entry.EntryType.choices
         context['statuses'] = Entry.Status.choices
         return context

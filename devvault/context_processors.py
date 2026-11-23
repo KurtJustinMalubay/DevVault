@@ -1,15 +1,11 @@
-from apps.home.models import Workspace
+from apps.home.workspaces import get_active_workspace, get_user_workspaces
 
 
 def workspace_context(request):
     if not request.user.is_authenticated:
         return {}
-    workspaces = list(Workspace.objects.filter(members=request.user))
-    active_id = request.session.get('active_workspace_id')
-    active_workspace = next((workspace for workspace in workspaces if workspace.pk == active_id), None)
-    if active_workspace is None and workspaces:
-        active_workspace = workspaces[0]
-        request.session['active_workspace_id'] = active_workspace.pk
+    workspaces = get_user_workspaces(request)
+    active_workspace = get_active_workspace(request)
     return {
         'user_workspaces': workspaces,
         'active_workspace': active_workspace,
