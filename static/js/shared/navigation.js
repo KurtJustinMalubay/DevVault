@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function closeMenu() {
     navigation.classList.remove('is-open');
+    navigation.setAttribute('aria-hidden', 'true');
     toggle.setAttribute('aria-expanded', 'false');
     toggle.setAttribute('aria-label', 'Open navigation');
   }
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   toggle.addEventListener('click', function () {
     var isOpen = navigation.classList.toggle('is-open');
+    navigation.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
     toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     toggle.setAttribute('aria-label', isOpen ? 'Close navigation' : 'Open navigation');
   });

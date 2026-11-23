@@ -13,6 +13,13 @@ INPUT_CLASSES = (
 
 
 class EntryForm(forms.ModelForm):
+    related_entries = forms.ModelMultipleChoiceField(
+        queryset=Entry.objects.none(),
+        required=False,
+        label='Related entries',
+        help_text='Connect this entry to other assets, bugs, notes, or decisions in this vault.',
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'related-entry-options'}),
+    )
     tags_input = forms.CharField(
         required=False,
         max_length=1000,
@@ -26,7 +33,7 @@ class EntryForm(forms.ModelForm):
 
     class Meta:
         model = Entry
-        fields = ('entry_type', 'title', 'description', 'status', 'image')
+        fields = ('entry_type', 'title', 'description', 'status', 'image', 'related_entries')
         widgets = {
             'entry_type': forms.Select(attrs={'class': INPUT_CLASSES}),
             'title': forms.TextInput(attrs={'class': INPUT_CLASSES, 'placeholder': 'Entry title'}),
@@ -39,8 +46,13 @@ class EntryForm(forms.ModelForm):
             'image': forms.ClearableFileInput(attrs={'class': 'text-sm text-mute'}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, workspace=None, **kwargs):
         super().__init__(*args, **kwargs)
+        workspace = workspace or getattr(self.instance, 'workspace', None)
+        if workspace is not None:
+            self.fields['related_entries'].queryset = Entry.objects.filter(
+                workspace=workspace,
+            ).exclude(pk=self.instance.pk).order_by('entry_type', 'title')
         if self.instance.pk:
             self.fields['tags_input'].initial = ', '.join(
                 self.instance.tags.values_list('name', flat=True)

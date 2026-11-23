@@ -8,9 +8,9 @@
 {% endblock %}
 
 {% block content %}
-<div class="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl grid-cols-1 lg:grid-cols-2">
+<div class="auth-screen auth-screen--register mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl grid-cols-1 lg:grid-cols-2">
 
-  <section class="relative hidden overflow-hidden border-r border-white/5 px-14 py-16 lg:flex lg:flex-col lg:justify-between">
+  <section class="auth-showcase relative hidden overflow-hidden border-r border-white/5 px-14 py-16 lg:flex lg:flex-col lg:justify-between">
     <div class="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-brass/10 blur-3xl"></div>
     <div class="pointer-events-none absolute bottom-0 right-0 h-64 w-64 rounded-full bg-teal/10 blur-3xl"></div>
 
@@ -38,10 +38,12 @@
     </ul>
   </section>
 
-  <section class="flex items-center justify-center px-6 py-14">
+  <section class="auth-panel flex items-center justify-center px-6 py-14">
     <div class="w-full max-w-md">
-      <h1 class="font-display text-2xl font-semibold text-ink">Create your vault</h1>
-      <p class="mt-1.5 text-sm text-mute">Register an account and spin up your studio's first workspace.</p>
+      <div class="auth-heading">
+        <h1 class="font-display text-2xl font-semibold text-ink">Create your vault</h1>
+        <p class="mt-1.5 text-sm text-mute">Register an account and spin up your studio's first workspace.</p>
+      </div>
 
       {% if form.non_field_errors %}
       <div class="mt-6 border-l-2 border-coral bg-coral/5 px-4 py-3 text-sm text-coral" role="alert">

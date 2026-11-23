@@ -35,8 +35,6 @@ class ProfileForm(forms.ModelForm):
                 'placeholder': 'Tell your team a bit about yourself…',
             }),
             'avatar_image': forms.ClearableFileInput(attrs={
-                'class': 'text-sm text-mute file:mr-3 file:rounded-md file:border-0 '
-                         'file:bg-brass/10 file:px-3 file:py-2 file:text-brass '
-                         'hover:file:bg-brass/20',
+                'class': 'profile-file-input',
             }),
         }

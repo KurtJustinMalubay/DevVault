@@ -5,6 +5,7 @@ env/
 __pycache__/
 *.pyc
 db.sqlite3
+VIDEO_DEMO_SCRIPT.md
 media/*
 !media/.gitkeep
 .DS_Store

@@ -17,19 +17,20 @@
       when you register — if you're seeing this, you can create one or ask a teammate
       to invite you to theirs.
     </p>
-    <a href="{% url 'home:workspace-create' %}" class="mt-5 inline-flex bg-brass px-4 py-2.5 text-sm font-semibold text-vault-950 hover:bg-brass-soft">Create a vault</a>
+    <a href="{% url 'home:workspace-create' %}" class="button-primary mt-5">Create a vault</a>
   </div>
 
   {% else %}
 
-  <div class="flex flex-wrap items-end justify-between gap-4">
+  <div class="page-heading-row dashboard-heading">
     <div>
-      <p class="font-mono text-xs text-mute">workspace</p>
-      <h1 class="mt-1 font-display text-3xl font-semibold text-ink">{{ workspace.name }}</h1>
+      <p class="page-eyebrow">Team workspace</p>
+      <h1 class="page-heading">{{ workspace.name }}</h1>
+      <p class="page-subtitle">{{ member_count }} member{{ member_count|pluralize }} · {{ total_entries }} total entr{{ total_entries|pluralize:"y,ies" }}</p>
     </div>
-    <div class="flex items-center gap-3">
-      <p class="text-sm text-mute">{{ member_count }} member{{ member_count|pluralize }} &middot; {{ total_entries }} total entr{{ total_entries|pluralize:"y,ies" }}</p>
-      <a href="{% url 'home:entry-create' %}" class="border border-brass/50 px-3 py-1.5 text-xs text-brass hover:bg-brass/10 transition">New entry</a>
+    <div class="dashboard-actions">
+      <a href="{% url 'home:entries' %}" class="button-secondary">Browse entries</a>
+      <a href="{% url 'home:entry-create' %}" class="button-primary">New entry</a>
     </div>
   </div>
 
@@ -61,34 +62,36 @@
   </div>
 
   <section class="glass-panel mt-6 px-6 py-5" aria-labelledby="vault-progress-heading">
-    <div class="flex flex-wrap items-end justify-between gap-3">
+    <div class="progress-header">
       <div>
-        <p class="text-xs uppercase tracking-[0.18em] text-mute">Current progress</p>
-        <h2 id="vault-progress-heading" class="mt-1 font-display text-xl font-semibold text-ink">
-          {{ progress_percent }}% complete
-        </h2>
+        <p class="progress-eyebrow">Entry resolution</p>
+        <h2 id="vault-progress-heading" class="progress-title">{{ progress_percent }}% resolved</h2>
       </div>
-      <p class="text-sm text-mute">
-        {{ resolved_count }} resolved <span class="text-mute/50">&middot;</span> {{ in_progress_count }} in progress
+      <p class="progress-summary">
+        <span>{{ resolved_count }} resolved</span>
+        <span class="progress-separator" aria-hidden="true"></span>
+        <span>{{ in_progress_count }} in progress</span>
+        <span class="progress-separator" aria-hidden="true"></span>
+        <span>{{ open_entry_count }} open</span>
       </p>
     </div>
-    <div class="mt-4 h-2 overflow-hidden rounded-full bg-vault-950/70"
+    <div class="progress-track progress-track--vault"
          role="progressbar"
-         aria-label="Vault completion"
+         aria-label="Percentage of vault entries resolved"
          aria-valuemin="0"
          aria-valuemax="100"
          aria-valuenow="{{ progress_percent }}">
-      <div class="h-full rounded-full bg-brass transition-[width]" style="width: {{ progress_percent }}%"></div>
+      <div class="progress-fill progress-fill--vault" style="width: {{ progress_percent }}%"></div>
     </div>
   </section>
 
   <div class="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-    <div class="glass-panel lg:col-span-2">
+    <section class="glass-panel dashboard-panel lg:col-span-2" aria-labelledby="recent-entries-heading">
       <div class="border-b border-white/5 px-6 py-4">
         <div class="flex items-center justify-between gap-4">
-          <h2 class="font-display text-lg font-semibold text-ink">Recent entries</h2>
-          <a href="{% url 'home:entries' %}" class="text-xs text-brass hover:text-brass-soft">View all</a>
+          <h2 id="recent-entries-heading" class="font-display text-lg font-semibold text-ink">Recent entries</h2>
+          <a href="{% url 'home:entries' %}" class="inline-link">View all <span aria-hidden="true">→</span></a>
         </div>
       </div>
 
@@ -109,9 +112,7 @@
                 {% else %}border-white/20 text-mute{% endif %}">
                 {{ entry.get_entry_type_display }}
               </span>
-              {% if entry.entry_type == 'BUG' %}
-              <span class="text-[11px] text-mute">{{ entry.get_status_display }}</span>
-              {% endif %}
+              <span class="status-badge {% if entry.status == 'RESOLVED' %}status-badge--resolved{% elif entry.status == 'IN_PROGRESS' %}status-badge--active{% else %}status-badge--open{% endif %}">{{ entry.get_status_display }}</span>
               <a href="{{ entry.get_absolute_url }}" class="truncate text-sm font-medium text-ink hover:text-brass">{{ entry.title }}</a>
             </div>
             {% if entry.description %}
@@ -129,14 +130,17 @@
       <div class="px-6 py-10 text-center">
         <p class="font-display text-base font-semibold text-ink">Your vault is ready for its first entry</p>
         <p class="mt-2 text-sm text-mute">Capture an asset, bug, note, or decision to give the team a shared starting point.</p>
-        <a href="{% url 'home:entry-create' %}" class="mt-4 inline-flex border border-brass/50 px-4 py-2 text-sm text-brass hover:bg-brass/10">Create an entry</a>
+        <a href="{% url 'home:entry-create' %}" class="button-primary mt-4">Create an entry</a>
       </div>
       {% endif %}
-    </div>
+    </section>
 
-    <div class="glass-panel border-coral/20">
+    <section class="glass-panel dashboard-panel open-bugs-panel" aria-labelledby="open-bugs-heading">
       <div class="border-b border-coral/10 px-6 py-4">
-        <h2 class="font-display text-lg font-semibold text-ink">Open bugs</h2>
+        <div class="flex items-center justify-between gap-3">
+          <h2 id="open-bugs-heading" class="font-display text-lg font-semibold text-ink">Open bugs</h2>
+          <span class="status-badge{% if open_issue_count %} status-badge--open{% endif %}">{{ open_issue_count }} open</span>
+        </div>
       </div>
 
       {% if open_bugs %}
@@ -153,10 +157,10 @@
       </ul>
       {% else %}
       <div class="px-6 py-10 text-center">
-        <p class="text-sm text-teal">No open bugs. Nice.</p>
+        <p class="text-sm text-teal">No open bugs. Your team is all caught up.</p>
       </div>
       {% endif %}
-    </div>
+    </section>
 
   </div>
   {% endif %}

@@ -1,9 +1,93 @@
 /* Settings-specific presentation. Only the Settings screen loads this file. */
 
-#settings-form label {
-  padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+.settings-section {
+  display: grid;
+  gap: 0;
 }
-#settings-form label:last-of-type {
-  border-bottom: none;
+
+.settings-form {
+  display: grid;
+  gap: 24px;
+}
+
+.settings-section + .settings-section {
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.settings-section-title {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 680;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.settings-option,
+.settings-select-row {
+  display: flex;
+  min-width: 0;
+  min-height: 68px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+}
+
+.settings-option {
+  cursor: pointer;
+}
+
+.settings-option:hover,
+.settings-select-row:hover {
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--brass) 5%, var(--surface));
+}
+
+.settings-option:last-child,
+.settings-select-row:last-child {
+  border-bottom-color: transparent;
+}
+
+.settings-option > span,
+.settings-select-row > div {
+  min-width: 0;
+}
+
+.settings-option-title {
+  display: block;
+  color: var(--ink);
+  font-size: 0.86rem;
+  font-weight: 620;
+}
+
+.settings-option-description {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.settings-select-row select {
+  width: min(220px, 42%);
+  min-width: 140px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 540px) {
+  .settings-select-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 4px;
+  }
+
+  .settings-select-row select {
+    width: 100%;
+    min-width: 0;
+  }
 }

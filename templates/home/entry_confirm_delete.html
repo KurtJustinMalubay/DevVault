@@ -2,5 +2,17 @@
 {% block title %}Delete entry — DevVault{% endblock %}
 
 {% block content %}
-<div class="mx-auto max-w-lg px-6 py-16"><div class="glass-panel px-7 py-8"><h1 class="font-display text-2xl font-semibold text-ink">Delete entry?</h1><p class="mt-3 text-sm leading-relaxed text-mute">This will permanently delete “{{ object.title }}” and its comments.</p><form method="post" class="mt-7 flex gap-3">{% csrf_token %}<a href="{{ object.get_absolute_url }}" class="flex-1 border border-white/15 px-4 py-2.5 text-center text-sm text-mute hover:text-ink">Cancel</a><button class="flex-1 bg-coral px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90">Delete</button></form></div></div>
+<div class="mx-auto max-w-lg px-6 py-16">
+  <section class="glass-panel delete-confirmation" aria-labelledby="delete-entry-heading" aria-describedby="delete-entry-description">
+    <span class="delete-warning-icon" aria-hidden="true">!</span>
+    <p class="page-eyebrow">Permanent action</p>
+    <h1 id="delete-entry-heading" class="page-heading">Delete this entry?</h1>
+    <p id="delete-entry-description" class="delete-description">“{{ object.title }}” and its comments will be permanently deleted. This can’t be undone.</p>
+    <form method="post" class="delete-actions">
+      {% csrf_token %}
+      <a href="{{ object.get_absolute_url }}" class="button-secondary">Keep entry</a>
+      <button type="submit" class="button-danger">Delete entry</button>
+    </form>
+  </section>
+</div>
 {% endblock %}

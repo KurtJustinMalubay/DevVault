@@ -19,7 +19,11 @@ class WorkspaceAccessMixin(LoginRequiredMixin):
 
     def get_entry(self):
         return get_object_or_404(
-            Entry.objects.select_related('author', 'workspace').prefetch_related('tags', 'comments__author'),
+            Entry.objects.select_related('author', 'workspace').prefetch_related(
+                'tags',
+                'comments__author',
+                'related_entries__author__profile',
+            ),
             pk=self.kwargs['pk'],
             workspace__members=self.request.user,
         )
@@ -46,6 +50,9 @@ class HomeView(LoginRequiredMixin, TemplateView):
                 'open_issue_count': 0,
                 'total_entries': 0,
                 'member_count': 0,
+                'open_entry_count': 0,
+                'in_progress_count': 0,
+                'resolved_count': 0,
             })
             return context
 
@@ -70,6 +77,10 @@ class HomeView(LoginRequiredMixin, TemplateView):
             in_progress_count=Count(
                 'pk',
                 filter=Q(status=Entry.Status.IN_PROGRESS),
+            ),
+            open_entry_count=Count(
+                'pk',
+                filter=Q(status=Entry.Status.OPEN),
             ),
             resolved_count=Count(
                 'pk',
@@ -178,7 +189,8 @@ class EntryListView(WorkspaceAccessMixin, ListView):
 
         query = self.request.GET.get('q', '').strip()
         entry_type = self.request.GET.get('type', '').strip()
-        status = self.request.GET.get('status', '').strip()
+        raw_status = self.request.GET.get('status')
+        status = raw_status.strip() if raw_status is not None else None
         commented = self.request.GET.get('commented', '').strip()
         if query:
             queryset = queryset.filter(Q(title__icontains=query) | Q(description__icontains=query))
@@ -186,6 +198,11 @@ class EntryListView(WorkspaceAccessMixin, ListView):
             queryset = queryset.filter(entry_type=entry_type)
         if status in Entry.Status.values:
             queryset = queryset.filter(status=status)
+        elif status == 'ACTIVE' or (
+            status is None
+            and getattr(getattr(self.request.user, 'settings', None), 'hide_resolved_entries', False)
+        ):
+            queryset = queryset.exclude(status=Entry.Status.RESOLVED)
         print("\n=== DJANGO ORM JOIN SQL ===")
         print(queryset.query)
 
@@ -203,8 +220,25 @@ class EntryListView(WorkspaceAccessMixin, ListView):
         context['workspace'] = self.get_workspace()
         context['query'] = self.request.GET.get('q', '').strip()
         context['selected_type'] = self.request.GET.get('type', '')
-        context['selected_status'] = self.request.GET.get('status', '')
+        selected_status = self.request.GET.get('status')
+        user_settings = getattr(self.request.user, 'settings', None)
+        hide_resolved_by_default = bool(
+            user_settings and user_settings.hide_resolved_entries
+        )
+        if selected_status is None:
+            selected_status = 'ACTIVE' if hide_resolved_by_default else 'ALL'
+        context['selected_status'] = selected_status
+        context['resolved_hidden_by_default'] = (
+            hide_resolved_by_default and self.request.GET.get('status') is None
+        )
         context['selected_commented'] = self.request.GET.get('commented', '').strip()
+        context['has_active_filters'] = bool(
+            context['query']
+            or context['selected_type'] in Entry.EntryType.values
+            or context['selected_commented'] == '1'
+            or self.request.GET.get('status') in Entry.Status.values
+            or self.request.GET.get('status') == 'ACTIVE'
+        )
         context['entry_types'] = Entry.EntryType.choices
         context['statuses'] = Entry.Status.choices
         return context
@@ -242,6 +276,14 @@ class EntryCreateView(WorkspaceAccessMixin, CreateView):
             messages.error(request, 'Create or join a vault before adding entries.')
             return redirect('home:home')
         return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['workspace'] = self.get_workspace()
+        user_settings = getattr(self.request.user, 'settings', None)
+        if user_settings:
+            kwargs['initial']['entry_type'] = user_settings.default_entry_type
+        return kwargs
 
     def form_valid(self, form):
         form.instance.workspace = self.get_workspace()

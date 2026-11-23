@@ -13,6 +13,17 @@ class UserSettings(models.Model):
         on_delete=models.CASCADE,
         related_name='settings',
     )
+
+    class LandingPage(models.TextChoices):
+        HOME = 'HOME', 'Home'
+        ENTRIES = 'ENTRIES', 'Entries'
+
+    class DefaultEntryType(models.TextChoices):
+        ASSET = 'ASSET', 'Asset'
+        BUG = 'BUG', 'Bug'
+        NOTE = 'NOTE', 'Note'
+        DECISION = 'DECISION', 'Decision'
+
     dark_mode = models.BooleanField(default=True)
     email_notifications = models.BooleanField(default=True)
     compact_dashboard = models.BooleanField(
@@ -21,6 +32,17 @@ class UserSettings(models.Model):
     )
     reduced_motion = models.BooleanField(default=False)
     show_timestamps = models.BooleanField(default=True)
+    default_landing_page = models.CharField(
+        max_length=7,
+        choices=LandingPage.choices,
+        default=LandingPage.HOME,
+    )
+    hide_resolved_entries = models.BooleanField(default=False)
+    default_entry_type = models.CharField(
+        max_length=10,
+        choices=DefaultEntryType.choices,
+        default=DefaultEntryType.NOTE,
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):

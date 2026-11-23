@@ -24,6 +24,14 @@ class WorkspaceWithoutMembershipTests(TestCase):
 
         self.assertRedirects(response, reverse('home:home'))
 
+    def test_entries_without_workspace_offers_vault_creation(self):
+        response = self.client.get(reverse('home:entries'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Choose a vault to see its entries')
+        self.assertContains(response, 'Create a vault')
+        self.assertNotContains(response, 'New entry')
+
 
 class ExistingFeatureFlowTests(TestCase):
     def setUp(self):
@@ -153,6 +161,111 @@ class ExistingFeatureFlowTests(TestCase):
         self.assertRedirects(response, reverse('home:entries'))
         self.assertFalse(Entry.objects.filter(pk=entry.pk).exists())
 
+    def test_empty_entry_search_offers_to_clear_filters(self):
+        workspace = Workspace.objects.create(name='Nightfall', owner=self.user)
+        Membership.objects.create(
+            user=self.user,
+            workspace=workspace,
+            role=Membership.Role.OWNER,
+        )
+
+        response = self.client.get(reverse('home:entries'), {'q': 'missing'})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'No entries match these filters')
+        self.assertContains(response, 'Clear filters')
+        self.assertNotContains(response, 'Start with one useful entry')
+
+    def test_empty_vault_offers_first_entry_creation(self):
+        workspace = Workspace.objects.create(name='Nightfall', owner=self.user)
+        Membership.objects.create(
+            user=self.user,
+            workspace=workspace,
+            role=Membership.Role.OWNER,
+        )
+
+        response = self.client.get(reverse('home:entries'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Start with one useful entry')
+        self.assertContains(response, 'Create an entry')
+
+    def test_resolved_entries_preference_can_be_overridden_by_status_filter(self):
+        workspace = Workspace.objects.create(name='Nightfall', owner=self.user)
+        Membership.objects.create(
+            user=self.user,
+            workspace=workspace,
+            role=Membership.Role.OWNER,
+        )
+        open_entry = Entry.objects.create(
+            workspace=workspace,
+            author=self.user,
+            title='Open issue',
+            status=Entry.Status.OPEN,
+        )
+        resolved_entry = Entry.objects.create(
+            workspace=workspace,
+            author=self.user,
+            title='Resolved issue',
+            status=Entry.Status.RESOLVED,
+        )
+        self.user.settings.hide_resolved_entries = True
+        self.user.settings.save(update_fields=['hide_resolved_entries'])
+
+        response = self.client.get(reverse('home:entries'))
+
+        self.assertEqual(response.context['selected_status'], 'ACTIVE')
+        self.assertEqual(list(response.context['entries']), [open_entry])
+
+        response = self.client.get(reverse('home:entries'), {'status': 'ALL'})
+        self.assertEqual(
+            set(response.context['entries']),
+            {open_entry, resolved_entry},
+        )
+
+        response = self.client.get(
+            reverse('home:entries'),
+            {'status': Entry.Status.RESOLVED},
+        )
+        self.assertEqual(list(response.context['entries']), [resolved_entry])
+
+    def test_hide_resolved_preference_has_a_recovery_action_when_only_resolved_entries_exist(self):
+        workspace = Workspace.objects.create(name='Nightfall', owner=self.user)
+        Membership.objects.create(
+            user=self.user,
+            workspace=workspace,
+            role=Membership.Role.OWNER,
+        )
+        Entry.objects.create(
+            workspace=workspace,
+            author=self.user,
+            title='Completed migration',
+            status=Entry.Status.RESOLVED,
+        )
+        self.user.settings.hide_resolved_entries = True
+        self.user.settings.save(update_fields=['hide_resolved_entries'])
+
+        response = self.client.get(reverse('home:entries'))
+
+        self.assertContains(response, 'No active entries')
+        self.assertContains(response, 'Show resolved entries')
+        self.assertNotContains(response, 'Start with one useful entry')
+
+    def test_new_entry_uses_saved_default_type(self):
+        workspace = Workspace.objects.create(name='Nightfall', owner=self.user)
+        Membership.objects.create(
+            user=self.user,
+            workspace=workspace,
+            role=Membership.Role.OWNER,
+        )
+        self.user.settings.default_entry_type = Entry.EntryType.BUG
+        self.user.settings.save(update_fields=['default_entry_type'])
+
+        response = self.client.get(reverse('home:entry-create'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['form']['entry_type'].value(), Entry.EntryType.BUG)
+
     def test_entry_detail_is_scoped_to_user_workspaces(self):
         other_user = get_user_model().objects.create_user(
             username='other',
@@ -218,3 +331,70 @@ class ExistingFeatureFlowTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Each tag must be 40 characters or fewer.')
         self.assertFalse(Entry.objects.filter(title='Long tag asset').exists())
+
+
+class RelatedEntriesTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username='linker',
+            password='Vault-password-281!',
+        )
+        self.client.force_login(self.user)
+        self.workspace = Workspace.objects.create(name='Nightfall', owner=self.user)
+        Membership.objects.create(
+            user=self.user,
+            workspace=self.workspace,
+            role=Membership.Role.OWNER,
+        )
+        self.asset = Entry.objects.create(
+            workspace=self.workspace,
+            author=self.user,
+            entry_type=Entry.EntryType.ASSET,
+            title='Character model',
+        )
+        other_workspace = Workspace.objects.create(name='Other vault', owner=self.user)
+        self.external_entry = Entry.objects.create(
+            workspace=other_workspace,
+            author=self.user,
+            entry_type=Entry.EntryType.BUG,
+            title='Unrelated bug',
+        )
+
+    def test_create_links_related_entry_and_displays_it_on_detail(self):
+        response = self.client.post(
+            reverse('home:entry-create'),
+            {
+                'entry_type': Entry.EntryType.BUG,
+                'title': 'Broken character shader',
+                'description': 'The model renders incorrectly.',
+                'status': Entry.Status.OPEN,
+                'tags_input': '',
+                'related_entries': [self.asset.pk],
+            },
+        )
+
+        entry = Entry.objects.get(title='Broken character shader')
+        self.assertRedirects(response, reverse('home:entry-detail', args=[entry.pk]))
+        self.assertTrue(entry.related_entries.filter(pk=self.asset.pk).exists())
+        self.assertTrue(self.asset.related_entries.filter(pk=entry.pk).exists())
+
+        detail_response = self.client.get(reverse('home:entry-detail', args=[entry.pk]))
+        self.assertContains(detail_response, 'Related entries')
+        self.assertContains(detail_response, 'Character model')
+
+    def test_create_rejects_related_entry_from_another_workspace(self):
+        response = self.client.post(
+            reverse('home:entry-create'),
+            {
+                'entry_type': Entry.EntryType.BUG,
+                'title': 'Cross-vault link',
+                'description': '',
+                'status': Entry.Status.OPEN,
+                'tags_input': '',
+                'related_entries': [self.external_entry.pk],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Entry.objects.filter(title='Cross-vault link').exists())
+        self.assertContains(response, 'Select a valid choice')

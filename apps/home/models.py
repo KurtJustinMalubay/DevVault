@@ -89,6 +89,7 @@ class Entry(models.Model):
     title = models.CharField(max_length=150)
     description = models.TextField(blank=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name='entries')
+    related_entries = models.ManyToManyField('self', blank=True)
     image = models.ImageField(upload_to='entries/%Y/%m/', blank=True, null=True)
     status = models.CharField(max_length=15, choices=Status.choices, default=Status.OPEN)
     created_at = models.DateTimeField(auto_now_add=True)

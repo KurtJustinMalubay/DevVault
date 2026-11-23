@@ -7,11 +7,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-6">
-  <div class="pointer-events-none absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-brass/10 blur-3xl"></div>
+<div class="auth-screen auth-screen--login relative flex min-h-[calc(100vh-4rem)] items-center justify-center overflow-hidden px-6">
+  <div class="auth-glow pointer-events-none absolute left-1/2 top-0 h-96 w-96 -translate-x-1/2 rounded-full bg-brass/10 blur-3xl"></div>
 
   <div class="relative w-full max-w-sm">
-    <div class="mb-8 text-center">
+    <div class="auth-heading mb-8 text-center">
       <svg class="mx-auto mb-4" width="40" height="40" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="13" cy="13" r="11" stroke="#E3A537" stroke-width="1.4"/>
         <circle cx="13" cy="13" r="3.2" fill="#E3A537"/>
@@ -24,7 +24,7 @@
       <p class="mt-1.5 text-sm text-mute">Sign in to reach your team's vault.</p>
     </div>
 
-    <div class="glass-panel px-8 py-8">
+    <div class="auth-card glass-panel px-8 py-8">
       {% if form.non_field_errors %}
       <div class="mb-6 border-l-2 border-coral bg-coral/5 px-4 py-3 text-sm text-coral" role="alert">
         {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}

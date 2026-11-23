@@ -3,12 +3,33 @@
 
 {% block content %}
 <div class="mx-auto max-w-2xl px-6 py-10">
-  <a href="{% if form.instance.pk %}{{ form.instance.get_absolute_url }}{% else %}{% url 'home:entries' %}{% endif %}" class="text-sm text-mute hover:text-brass">&larr; Cancel</a>
-  <h1 class="mt-4 font-display text-3xl font-semibold text-ink">{% if form.instance.pk %}Edit entry{% else %}New entry{% endif %}</h1>
-  <form method="post" enctype="multipart/form-data" class="glass-panel mt-8 space-y-5 px-6 py-7">{% csrf_token %}
+  <a href="{% if form.instance.pk %}{{ form.instance.get_absolute_url }}{% else %}{% url 'home:entries' %}{% endif %}" class="back-link"><span aria-hidden="true">←</span> {% if form.instance.pk %}Back to entry{% else %}Back to entries{% endif %}</a>
+  <div class="form-page-heading">
+    <p class="page-eyebrow">{% if form.instance.pk %}Update the shared record{% else %}Add to your vault{% endif %}</p>
+    <h1 class="page-heading">{% if form.instance.pk %}Edit entry{% else %}New entry{% endif %}</h1>
+    <p class="page-subtitle">Keep the details clear so teammates can find and act on this later.</p>
+  </div>
+  <form method="post" enctype="multipart/form-data" class="form-card glass-panel">{% csrf_token %}
     {% if form.non_field_errors %}<div class="border-l-2 border-coral bg-coral/5 px-4 py-3 text-sm text-coral" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
-    {% for field in form %}<div><label for="{{ field.id_for_label }}" class="mb-1.5 block text-sm text-ink">{{ field.label }}</label>{{ field }}{% if field.help_text %}<p class="mt-1 text-xs text-mute">{{ field.help_text }}</p>{% endif %}{% for error in field.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}</div>{% endfor %}
-    <button class="w-full bg-brass py-2.5 text-sm font-semibold text-vault-950 hover:bg-brass-soft">{% if form.instance.pk %}Save changes{% else %}Create entry{% endif %}</button>
+    {% for field in form %}
+    <div class="form-field{% if field.name == 'related_entries' %} related-entry-field{% endif %}">
+      {% if field.name == 'related_entries' %}
+      <fieldset class="related-entry-fieldset">
+      <legend class="form-label">{{ field.label }}</legend>
+      <div class="related-entry-picker">{{ field }}</div>
+      </fieldset>
+      {% else %}
+      <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}{% if field.field.required %}<span class="required-mark">Required</span>{% endif %}</label>
+      {{ field }}
+      {% endif %}
+      {% if field.help_text %}<p class="form-help">{{ field.help_text }}</p>{% endif %}
+      {% for error in field.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+    </div>
+    {% endfor %}
+    <div class="form-actions">
+      <a href="{% if form.instance.pk %}{{ form.instance.get_absolute_url }}{% else %}{% url 'home:entries' %}{% endif %}" class="button-secondary">Cancel</a>
+      <button type="submit" class="button-primary">{% if form.instance.pk %}Save changes{% else %}Create entry{% endif %}</button>
+    </div>
   </form>
 </div>
 {% endblock %}

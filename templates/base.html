@@ -8,16 +8,17 @@
 
 <link rel="stylesheet" href="{% static 'css/shared/base.css' %}">
 {% block extra_head %}{% endblock %}
+<link rel="stylesheet" href="{% static 'css/shared/product-ui.css' %}">
 </head>
 <body class="min-h-screen font-body text-ink antialiased{% if user.is_authenticated and user_settings %}{% if not user_settings.dark_mode %} theme-light{% endif %}{% if user_settings.compact_dashboard %} compact{% endif %}{% if user_settings.reduced_motion %} reduced-motion{% endif %}{% endif %}">
 
 <a class="skip-link" href="#main-content">Skip to content</a>
-<header class="sticky top-0 z-40 glass-panel border-b border-white/5">
-  <div class="mx-auto max-w-7xl px-6">
-    <div class="flex h-16 items-center justify-between">
+<header class="site-header sticky top-0 z-40">
+  <div class="site-header__inner mx-auto max-w-7xl px-6">
+    <div class="site-header__bar flex h-16 items-center justify-between">
 
       <a href="{% if user.is_authenticated %}{% url 'home:home' %}{% else %}{% url 'login:login' %}{% endif %}"
-         class="flex items-center gap-2.5 font-display text-lg font-semibold tracking-tight text-ink">
+         class="site-brand flex items-center gap-2.5 font-display text-lg font-semibold tracking-tight text-ink">
         <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="13" cy="13" r="11" stroke="#E3A537" stroke-width="1.6"/>
           <circle cx="13" cy="13" r="3.2" fill="#E3A537"/>
@@ -26,11 +27,11 @@
           <line x1="1.6" y1="13" x2="5" y2="13" stroke="#E3A537" stroke-width="1.6"/>
           <line x1="21" y1="13" x2="24.4" y2="13" stroke="#E3A537" stroke-width="1.6"/>
         </svg>
-        Dev<span class="text-brass">Vault</span>
+        <span class="site-brand__word">Dev<span class="text-brass">Vault</span></span>
       </a>
 
       {% if user.is_authenticated %}
-      <div class="hidden items-center gap-2 md:flex">
+      <div class="workspace-controls hidden items-center gap-2 md:flex">
         <form method="post" action="{% url 'home:workspace-switch' %}">
           {% csrf_token %}
           <input type="hidden" name="next" value="{{ request.path }}">
@@ -41,7 +42,7 @@
         </form>
         <a href="{% url 'home:workspace-create' %}" class="text-lg text-brass hover:text-brass-soft" title="Create vault" aria-label="Create vault">+</a>
       </div>
-      <nav class="hidden items-center gap-8 md:flex" aria-label="Main navigation">
+      <nav class="site-nav hidden items-center gap-8 md:flex" aria-label="Main navigation">
         <a href="{% url 'home:home' %}" class="nav-link text-sm text-ink hover:text-brass transition" {% if request.resolver_match.url_name == 'home' %}aria-current="page"{% endif %}>Home</a>
         <a href="{% url 'profile:profile' %}" class="nav-link text-sm text-ink hover:text-brass transition" {% if request.resolver_match.url_name == 'profile' %}aria-current="page"{% endif %}>Profile</a>
         <a href="{% url 'user_settings:settings' %}" class="nav-link text-sm text-ink hover:text-brass transition" {% if request.resolver_match.url_name == 'settings' %}aria-current="page"{% endif %}>Settings</a>
@@ -49,7 +50,7 @@
         <a href="{% url 'home:workspace-invite' %}" class="nav-link text-sm text-ink hover:text-brass transition" {% if request.resolver_match.url_name == 'workspace-invite' %}aria-current="page"{% endif %}>Invite</a>
       </nav>
 
-      <div class="flex items-center gap-3">
+      <div class="account-actions flex items-center gap-3">
         <button type="button" class="menu-toggle" id="menu-toggle" aria-controls="app-navigation" aria-expanded="false" aria-label="Open navigation">
           <span></span><span></span><span></span>
         </button>
@@ -73,7 +74,7 @@
         </form>
       </div>
       {% else %}
-      <div class="flex items-center gap-4 text-sm">
+      <div class="guest-actions flex items-center gap-4 text-sm">
         <a href="{% url 'login:login' %}" class="text-ink hover:text-brass transition">Sign in</a>
         <a href="{% url 'register:register' %}"
            class="border border-brass/50 px-4 py-2 text-brass hover:bg-brass/10 transition">Register</a>
@@ -84,7 +85,7 @@
 </header>
 
 {% if user.is_authenticated %}
-<nav class="mobile-navigation" id="app-navigation" aria-label="Main navigation">
+<nav class="mobile-navigation" id="app-navigation" aria-label="Main navigation" aria-hidden="true">
   <form method="post" action="{% url 'home:workspace-switch' %}" class="mobile-workspace-switch">
     {% csrf_token %}
     <input type="hidden" name="next" value="{{ request.path }}">
@@ -104,9 +105,9 @@
 {% endif %}
 
 {% if messages %}
-<div class="mx-auto max-w-7xl px-6 pt-4" aria-live="polite">
+<div class="site-messages mx-auto max-w-7xl px-6 pt-4" aria-live="polite">
   {% for message in messages %}
-  <div class="mb-3 border-l-2 border-brass bg-vault-900/80 px-4 py-2.5 text-sm text-ink">{{ message }}</div>
+  <div class="site-message mb-3 border-l-2 border-brass bg-vault-900/80 px-4 py-2.5 text-sm text-ink">{{ message }}</div>
   {% endfor %}
 </div>
 {% endif %}

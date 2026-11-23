@@ -8,13 +8,14 @@
 
 {% block content %}
 <div class="mx-auto max-w-2xl px-6 py-10">
-  <h1 class="font-display text-3xl font-semibold text-ink">Profile</h1>
-  <p class="mt-1.5 text-sm text-mute">How you show up to the rest of your team.</p>
+  <p class="page-eyebrow">Your team identity</p>
+  <h1 class="page-heading">Profile</h1>
+  <p class="page-subtitle">How you show up to the rest of your team.</p>
 
-  <div class="glass-panel mt-8 px-8 py-8">
-    <div class="mb-6 flex items-center gap-4">
+  <div class="form-card glass-panel">
+    <div class="profile-summary">
       <div id="avatar-preview"
-           class="grid h-16 w-16 place-items-center overflow-hidden rounded-full border border-brass/40 font-mono text-lg font-semibold text-brass"
+           class="profile-avatar-preview grid place-items-center overflow-hidden rounded-full border border-brass/40 font-mono font-semibold text-brass"
            style="background-color: {{ form.instance.avatar_color|default:'#E3A537' }}22;">
         {% if form.instance.avatar_image %}
           <img src="{{ form.instance.avatar_image.url }}" alt="" class="h-full w-full object-cover">
@@ -22,43 +23,46 @@
           {{ form.instance.initials|default:"?" }}
         {% endif %}
       </div>
-      <div>
-        <p class="text-sm text-ink">{{ form.instance.display_name|default:user.username }}</p>
-        <p class="text-xs text-mute">@{{ user.username }} &middot; {{ user.email }}</p>
+      <div class="profile-summary-copy">
+        <div class="profile-summary-identity">
+          <p class="text-sm text-ink">{{ form.instance.display_name|default:user.username }}</p>
+          <span class="text-xs text-mute">@{{ user.username }}</span>
+        </div>
+        <p class="text-xs text-mute">{{ user.email }}</p>
       </div>
     </div>
 
-    <form method="post" enctype="multipart/form-data" class="space-y-5" id="profile-form">
+    <form method="post" enctype="multipart/form-data" class="form-fields" id="profile-form">
       {% csrf_token %}
       {% if form.non_field_errors %}<div class="border-l-2 border-coral bg-coral/5 px-4 py-3 text-sm text-coral" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
 
       <div>
-        <label for="{{ form.display_name.id_for_label }}" class="mb-1.5 block text-sm text-ink">Display name</label>
+        <label for="{{ form.display_name.id_for_label }}" class="form-label">Display name</label>
         {{ form.display_name }}
         {% for error in form.display_name.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}
       </div>
 
       <div>
-        <label for="{{ form.bio.id_for_label }}" class="mb-1.5 block text-sm text-ink">Bio</label>
+        <label for="{{ form.bio.id_for_label }}" class="form-label">Bio</label>
         {{ form.bio }}
         {% for error in form.bio.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}
       </div>
 
       <div class="flex items-center gap-4">
         <div>
-          <label for="{{ form.avatar_color.id_for_label }}" class="mb-1.5 block text-sm text-ink">Badge color</label>
+          <label for="{{ form.avatar_color.id_for_label }}" class="form-label">Badge color</label>
           {{ form.avatar_color }}
           {% for error in form.avatar_color.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}
         </div>
         <div class="flex-1">
-          <label for="{{ form.avatar_image.id_for_label }}" class="mb-1.5 block text-sm text-ink">Profile picture</label>
-          {{ form.avatar_image }}
+          <label for="{{ form.avatar_image.id_for_label }}" class="form-label">Profile picture</label>
+          <div class="profile-file-control">{{ form.avatar_image }}</div>
+          {% if form.avatar_image.help_text %}<p class="form-help">{{ form.avatar_image.help_text }}</p>{% endif %}
           {% for error in form.avatar_image.errors %}<p class="mt-1 text-xs text-coral">{{ error }}</p>{% endfor %}
         </div>
       </div>
 
-      <button type="submit"
-              class="mt-2 w-full bg-brass py-2.5 text-sm font-semibold text-vault-950 transition hover:bg-brass-soft">
+      <button type="submit" class="button-primary form-submit">
         Save profile
       </button>
     </form>

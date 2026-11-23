@@ -16,6 +16,8 @@ class UserSettingsFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Reduce motion')
+        self.assertContains(response, 'Default start page')
+        self.assertContains(response, 'Default type for new entries')
 
         response = self.client.post(
             reverse('user_settings:settings'),
@@ -24,6 +26,9 @@ class UserSettingsFlowTests(TestCase):
                 'compact_dashboard': 'on',
                 'reduced_motion': 'on',
                 'show_timestamps': 'on',
+                'default_landing_page': 'ENTRIES',
+                'hide_resolved_entries': 'on',
+                'default_entry_type': 'BUG',
             },
         )
 
@@ -34,6 +39,9 @@ class UserSettingsFlowTests(TestCase):
         self.assertTrue(self.user.settings.compact_dashboard)
         self.assertTrue(self.user.settings.reduced_motion)
         self.assertTrue(self.user.settings.show_timestamps)
+        self.assertEqual(self.user.settings.default_landing_page, 'ENTRIES')
+        self.assertTrue(self.user.settings.hide_resolved_entries)
+        self.assertEqual(self.user.settings.default_entry_type, 'BUG')
 
         response = self.client.get(reverse('user_settings:settings'))
         self.assertIn(b'<html lang="en" class="reduced-motion">', response.content)
@@ -41,7 +49,13 @@ class UserSettingsFlowTests(TestCase):
         self.assertIn(b'compact', response.content)
 
     def test_unchecked_preferences_are_saved_as_false(self):
-        self.client.post(reverse('user_settings:settings'), {})
+        self.client.post(
+            reverse('user_settings:settings'),
+            {
+                'default_landing_page': 'HOME',
+                'default_entry_type': 'NOTE',
+            },
+        )
 
         self.user.settings.refresh_from_db()
         self.assertFalse(self.user.settings.dark_mode)
@@ -49,3 +63,6 @@ class UserSettingsFlowTests(TestCase):
         self.assertFalse(self.user.settings.compact_dashboard)
         self.assertFalse(self.user.settings.reduced_motion)
         self.assertFalse(self.user.settings.show_timestamps)
+        self.assertFalse(self.user.settings.hide_resolved_entries)
+        self.assertEqual(self.user.settings.default_landing_page, 'HOME')
+        self.assertEqual(self.user.settings.default_entry_type, 'NOTE')
